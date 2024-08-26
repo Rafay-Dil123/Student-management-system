@@ -1,6 +1,6 @@
 // FeeGeneration.jsx
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   PDFViewer,
   PDFDownloadLink,
@@ -11,6 +11,7 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import "../stylefeegeneration.css";
+import axios from "axios";
 
 const styles = StyleSheet.create({
   page: {
@@ -45,7 +46,7 @@ const styles = StyleSheet.create({
   },
 });
 
-const generateFeePDF = (studentData) => (
+const generateFeePDF = (studentData, courseData) => (
   <Document>
     <Page size="A4" style={styles.page}>
       <View style={styles.section}>
@@ -55,25 +56,58 @@ const generateFeePDF = (studentData) => (
         <Text style={styles.label}>{`Roll Number:`}</Text>
         <Text style={styles.value}>{studentData.rollNumber}</Text>
         <Text style={styles.label}>{`Program:`}</Text>
-        <Text style={styles.value}>{studentData.program}</Text>
+        <Text style={styles.value}>{studentData.department}</Text>
         <Text style={styles.label}>{`Courses:`}</Text>
-        <Text style={styles.value}>{studentData.courses.join(", ")}</Text>
+        <Text style={styles.value}>{courseData.course_title}</Text>
         <Text style={styles.label}>{`Total Fee:`}</Text>
-        <Text style={styles.value}>{`$${studentData.fees}`}</Text>
+        <Text style={styles.value}>{`$${courseData.fee}`}</Text>
       </View>
     </Page>
   </Document>
 );
 
 const FeeGeneration = () => {
-  const studentData = {
-    name: "John Doe",
-    rollNumber: "123456",
-    program: "Computer Science",
-    courses: ["Mathematics", "Computer Science", "Physics"],
-    fees: "10,000",
-    // Add more details as needed
-  };
+  let [studentData, setstudentData] = useState([]);
+  let [courseData, setCourseData] = useState([]);
+  useEffect(() => {
+    const roll_number = localStorage.getItem("rollnumber");
+
+    let getstudentdata = async () => {
+      try {
+        let data = await fetch(
+          `http://127.0.0.1:8000/api/studentsdata/${roll_number}`
+        );
+        let d = await data.json();
+        setstudentData(d);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    getstudentdata();
+  }, []);
+
+  useEffect(() => {
+    const fetchCourse = async () => {
+      // if (studentData) {
+      const course_id = studentData.course;
+      //   console.log(course_id);
+      axios
+        .post("http://127.0.0.1:8000/api/courses-info/", {
+          course_id,
+        })
+        .then((response) => {
+          if (response.data) {
+            setCourseData(response.data);
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    };
+
+    fetchCourse();
+  }, [studentData]);
 
   return (
     <>
@@ -81,14 +115,14 @@ const FeeGeneration = () => {
         <h2>Fee Generation</h2>
 
         <PDFViewer width="100%" height={500}>
-          {generateFeePDF(studentData)}
+          {generateFeePDF(studentData, courseData)}
         </PDFViewer>
 
         <PDFDownloadLink
-          document={generateFeePDF(studentData)}
+          document={generateFeePDF(studentData, courseData)}
           fileName="fee_voucher.pdf"
         >
-          {({ blob, url, loading, error }) =>
+          {({loading}) =>
             loading ? "Loading document..." : "Download Fee Voucher"
           }
         </PDFDownloadLink>

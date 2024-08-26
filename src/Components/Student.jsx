@@ -18,15 +18,14 @@ import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { mainListItems, secondaryListItems } from "./listItems";
-import Profile from "./Profile";
-import Marks from "./Marks";
-import TimeTable from "./TimeTable";
-import FeeGeneration from "./FeeGeneration";
-import { Route, Routes } from "react-router-dom";
-import { Navigate } from "react-router-dom";
-import Attendance from "./Attendance";
-import CourseRegistration from "./CourseRegistration";
-import Notifications from "./Notifications";
+// import Profile from "./Profile";
+// import Marks from "./Marks";
+// import TimeTable from "./TimeTable";
+// import FeeGeneration from "./FeeGeneration";
+import { Outlet} from "react-router-dom";
+// import Attendance from "./Attendance";
+// import CourseRegistration from "./CourseRegistration";
+// import Notifications from "./Notifications";
 import Modal from "@mui/material/Modal";
 import React, { useState, useEffect } from "react";
 import Table from "@mui/material/Table";
@@ -35,6 +34,8 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+// import axios from "axios";
+// import StudentLogout from "./StudentLogout";
 // import Feedback from "./Feedback";
 
 function Copyright(props) {
@@ -109,22 +110,61 @@ export default function Student() {
     setOpen(!open);
   };
 
-  const [getRows, setRows] = useState([]);
-  const [loadData, setData] = useState([]);
-  const [name, setName] = useState("");
-  const [desc, setDesc] = useState("");
+  // const [getRows, setRows] = useState([]);
+  // const [loadData, setData] = useState([]);
+  // const [name, setName] = useState("");
+  // const [desc, setDesc] = useState("");
+  // const navigate = useNavigate();
+  // const [isLoggedIn, setLoggedIn] = useState(false);
+
+  // const login = localStorage.getItem("login");
+
+  // Set the default authorization header for all axios requests
+  // axios.defaults.headers.common["Authorization"] = `JWT ${token}`;
+
+  // const [studentData, setStudentData] = useState({});
+  // const [academyData, setAcademyData] = useState({});
+  // const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check the login status when the component mounts
+    const token = localStorage.getItem("login");
+
+    if (token) {
+      // Redirect only if not already on the student profile page
+      if (window.location.pathname !== "/dashboard/student-profile") {
+        window.location = "/dashboard/student-profile";
+      }
+    } else {
+      // Redirect only if not already on the student login page
+      if (window.location.pathname !== "/student-login") {
+        window.location.href = "/student-login";
+      }
+    }
+  }, []);
 
   const [openn, setOpenn] = React.useState(false);
 
   const handleClose = () => setOpenn(false);
+
+  useEffect(() => {
+    getnotifydata();
+  }, [openn]);
   const handleOpen = () => {
     setOpenn(true);
     //loadList();
   };
+  const [notificationData, setNotificationData] = useState([]);
+  const getnotifydata = async () => {
+    const rollnumber = localStorage.getItem("rollnumber");
+    const cleanedRollNumber = rollnumber.replace(/\D/g, ""); // Remove non-numeric characters
+    const response = await fetch(
+      `http://127.0.0.1:8000/api/displaynotifications/${cleanedRollNumber}`
+    );
+    const data = await response.json();
+    console.log(data);
 
-  const sample_data = {
-    Teacher: "Nauman",
-    Message: "Ajao kamry",
+    setNotificationData(data);
   };
 
   return (
@@ -170,7 +210,7 @@ export default function Student() {
                 >
                   <Box sx={style}>
                     <Grid container spacing={2}>
-                      <Grid xs={12}>
+                      <Grid item xs={12}>
                         <TableContainer component={Paper}>
                           <Table
                             sx={{ minWidth: 250 }}
@@ -180,7 +220,7 @@ export default function Student() {
                             <TableHead>
                               <TableRow>
                                 <TableCell component="th">
-                                  <b>Teacher Name</b>
+                                  <b>Student Rollnumber</b>
                                 </TableCell>
                                 <TableCell component="th">
                                   <b>Message</b>
@@ -188,17 +228,25 @@ export default function Student() {
                               </TableRow>
                             </TableHead>
                             <TableBody>
-                              {/* {loadData.map((row) => ( */}
-                              <TableRow
-                              // style={{
-                              //   backgroundColor:
-                              //     row.status == "0" ? "#ccffcc" : "white",
-                              // }}
-                              >
-                                <TableCell> {sample_data.Teacher} </TableCell>
-                                <TableCell>{sample_data.Message}</TableCell>
-                              </TableRow>
-                              {/* ))} */}
+                              {notificationData &&
+                              notificationData.length > 0 ? (
+                                notificationData.map((notification) => (
+                                  <TableRow key={notification.id}>
+                                    <TableCell>
+                                      {notification.roll_number}
+                                    </TableCell>
+                                    <TableCell>
+                                      {notification.notification_text}
+                                    </TableCell>
+                                  </TableRow>
+                                ))
+                              ) : (
+                                <TableRow>
+                                  <TableCell colSpan={2}>
+                                    No notifications found
+                                  </TableCell>
+                                </TableRow>
+                              )}
                             </TableBody>
                           </Table>
                         </TableContainer>
@@ -246,19 +294,19 @@ export default function Student() {
         >
           <Toolbar />
           <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-            <Routes>
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/fee-payment" element={<FeeGeneration />} />
+            <Outlet />
+            {/* <Routes>
+              <Route path="/student-profile" element={<Profile />} />
+              <Route path="/student-fee-payment" element={<FeeGeneration />} />
               <Route
-                path="course-registeration"
+                path="/student-course-registeration"
                 element={<CourseRegistration />}
               />
-              <Route path="/attendance" element={<Attendance />} />
-              <Route path="/marks" element={<Marks />} />
-              <Route path="/time-table" element={<TimeTable />} />
-              {/* <Route path="/feedback" element={<Feedback />} /> */}
-              <Route path="/" element={<Navigate to="/profile" />} />
-            </Routes>
+              <Route path="/student-attendance" element={<Attendance />} />
+              <Route path="/student-marks" element={<Marks />} />
+              <Route path="/student-time-table" element={<TimeTable />} />
+              <Route path="/student-logout" element={<StudentLogout />} />
+            </Routes> */}
             {/* Add more routes for other pages */}
 
             <Copyright sx={{ pt: 4 }} />
